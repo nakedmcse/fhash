@@ -21,6 +21,7 @@ module fhash
         type(fhash_array) :: storage
         contains
             procedure init
+            procedure rehash
             procedure set
             procedure get
     end type fhash_ht
@@ -51,21 +52,66 @@ module fhash
             end if
         end subroutine init
 
-        subroutine set(this, value)
-            ! Implement set
+        subroutine rehash(this, new_size)
+            class(fhash_ht) :: this
+            integer :: new_size, i, j, idx
+            type(fhash_kv), dimension(:), allocatable :: temp
+
+            if (new_size <= size(this%storage%items)) return
+            allocate(temp(new_size))
+
+            do i = 1,size(this%storage%items)
+                idx = modulo(fnv1a_hash(this%storage%items(i)%key), new_size)
+                do j = idx, idx + new_size
+                    if (.not. allocated(temp%items(modulo(j, new_size)))) then
+                        temp%items(modulo(j, new_size)) = this%storage%items(i)
+                        exit
+                    end if
+                end do
+            end do
+
+            call move_alloc(temp,this%storage%items)
         end subroutine
 
         subroutine get(this, key, res)
             class(fhash_ht) :: this
             character(len=*) :: key
             type(fhash_kv) :: res
-            integer :: idx, i
+            integer :: idx, mod_idx, i, capacity
 
             res%error = .true.
-            idx = modulo(fnv1a_hash(key), size(this%storage))
-            do i = idx, idx + size(this%storage)
-                if (this%storage%items(modulo(i,size(this%storage)))%key == key) then
-                    res = this%storage%items(modulo(i,size(this%storage)))
+            capacity = size(this%storage%items)
+            idx = modulo(fnv1a_hash(key), capacity)
+            do i = idx, idx + capacity
+                mod_idx = modulo(i,capacity)
+                if (.not. allocated(this%storage%items(mod_idx)%key)) then
+                    exit
+                elseif (this%storage%items(mod_idx)%key == key) then
+                    res = this%storage%items(mod_idx)
+                    exit
+                end if
+            end do
+        end subroutine
+
+        subroutine set(this, value)
+            class(fhash_ht) :: this
+            type(fhash_kv) :: value, found
+            integer :: idx, mod_idx, i, capacity
+
+            capacity = size(this%storage%items)
+            if (this%storage%count == capacity) then
+                call this%rehash(capacity * 2)
+            end if
+            idx = modulo(fnv1a_hash(key), capacity)
+            do i = idx, idx + capacity
+                mod_idx = modulo(i,capacity)
+                if (.not. allocated(this%storage%items(mod_idx)%key)) then
+                    this%storage%items(mod_idx)%key = value%key
+                    this%storage%items(mod_idx)%value = value%value
+                    this%storage%count = this%storage%count + 1
+                    exit
+                elseif (this%storage%items(mod_idx)%key == key) then
+                    this%storage%items(mod_idx)%value = value%value
                     exit
                 end if
             end do
