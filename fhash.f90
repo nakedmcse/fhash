@@ -54,7 +54,7 @@ module fhash
 
         subroutine rehash(this, new_size)
             class(fhash_ht) :: this
-            integer :: new_size, i, j, idx
+            integer :: new_size, i, j, idx, mod_idx
             type(fhash_kv), dimension(:), allocatable :: temp
 
             if (new_size <= size(this%storage%items)) return
@@ -63,8 +63,9 @@ module fhash
             do i = 1,size(this%storage%items)
                 idx = modulo(fnv1a_hash(this%storage%items(i)%key), new_size)
                 do j = idx, idx + new_size
-                    if (.not. allocated(temp%items(modulo(j, new_size)))) then
-                        temp%items(modulo(j, new_size)) = this%storage%items(i)
+                    mod_idx = modulo(j, new_size)
+                    if (.not. allocated(temp%items(mod_idx))) then
+                        temp%items(mod_idx) = this%storage%items(i)
                         exit
                     end if
                 end do
