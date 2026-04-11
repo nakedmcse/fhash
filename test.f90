@@ -19,6 +19,37 @@ program test
             end if
         end subroutine assert
 
+        function itoa(i) result(res)
+            integer, intent(in) :: i
+            character(:), allocatable :: res
+            character(range(i)+2) :: tmp
+
+            write(tmp, '(I0)') i
+            res = trim(tmp)
+        end function itoa
+
+        function unwrap_int(value) result (res)
+            integer :: res
+            class(*) :: value
+            select type(v => value)
+            type is (integer)
+                res = v
+            class default
+                res = -1
+            end select
+        end function unwrap_int
+
+        function unwrap_str(value) result (res)
+            character(len=:), allocatable :: res
+            class(*) :: value
+            select type(v => value)
+            type is (character(*))
+                res = v
+            class default
+                res = "unknown"
+            end select
+        end function unwrap_str
+
         subroutine test_array_ints()
             ! Given
             ! When
