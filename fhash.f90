@@ -10,7 +10,7 @@ module fhash
     end type fhash_kv
 
     type, public :: fhash_array
-        type(key_value), dimension(:), allocatable :: items
+        type(fhash_kv), dimension(:), allocatable :: items
         integer :: count = 0
         contains
             procedure append
@@ -54,69 +54,83 @@ module fhash
 
         subroutine rehash(this, new_size)
             class(fhash_ht) :: this
-            integer :: new_size, i, j, idx, mod_idx
+            integer, intent(in) :: new_size
+            integer :: i, offset, idx, mod_idx, old_size
             type(fhash_kv), dimension(:), allocatable :: temp
 
-            if (new_size <= size(this%storage%items)) return
-            allocate(temp(new_size))
+            if (.not. allocated(this%storage%items)) return
+            old_size = size(this%storage%items)
+            if (new_size <= old_size) return
 
-            do i = 1,size(this%storage%items)
-                idx = modulo(fnv1a_hash(this%storage%items(i)%key), new_size)
-                do j = idx, idx + new_size
-                    mod_idx = modulo(j, new_size)
-                    if (.not. allocated(temp%items(mod_idx))) then
-                        temp%items(mod_idx) = this%storage%items(i)
+            allocate(temp(new_size))
+            do i = 1, old_size
+                if (.not. allocated(this%storage%items(i)%key)) cycle
+
+                idx = modulo(fnv1a_hash(this%storage%items(i)%key), new_size) + 1
+                do offset = 0, new_size - 1
+                    mod_idx = modulo(idx - 1 + offset, new_size) + 1
+                    if (.not. allocated(temp(mod_idx)%key)) then
+                        temp(mod_idx) = this%storage%items(i)
                         exit
                     end if
                 end do
             end do
-
-            call move_alloc(temp,this%storage%items)
-        end subroutine
+            call move_alloc(temp, this%storage%items)
+        end subroutine rehash
 
         subroutine get(this, key, res)
             class(fhash_ht) :: this
-            character(len=*) :: key
-            type(fhash_kv) :: res
-            integer :: idx, mod_idx, i, capacity
+            character(len=*), intent(in) :: key
+            type(fhash_kv), intent(out) :: res
+            integer :: idx, mod_idx, offset, capacity
 
             res%error = .true.
+            if (.not. allocated(this%storage%items)) return
             capacity = size(this%storage%items)
-            idx = modulo(fnv1a_hash(key), capacity)
-            do i = idx, idx + capacity
-                mod_idx = modulo(i,capacity)
+            if (capacity == 0) return
+
+            idx = modulo(fnv1a_hash(key), capacity) + 1
+
+            do offset = 0, capacity - 1
+                mod_idx = modulo(idx - 1 + offset, capacity) + 1
                 if (.not. allocated(this%storage%items(mod_idx)%key)) then
-                    exit
+                    return
                 elseif (this%storage%items(mod_idx)%key == key) then
                     res = this%storage%items(mod_idx)
-                    exit
+                    res%error = .false.
+                    return
                 end if
             end do
-        end subroutine
+        end subroutine get
 
         subroutine set(this, value)
             class(fhash_ht) :: this
-            type(fhash_kv) :: value, found
-            integer :: idx, mod_idx, i, capacity
+            type(fhash_kv), intent(in) :: value
+            integer :: idx, mod_idx, offset, capacity
 
+            if (.not. allocated(this%storage%items)) then
+                call this%init(256)
+            end if
             capacity = size(this%storage%items)
             if (this%storage%count == capacity) then
                 call this%rehash(capacity * 2)
+                capacity = size(this%storage%items)
             end if
-            idx = modulo(fnv1a_hash(key), capacity)
-            do i = idx, idx + capacity
-                mod_idx = modulo(i,capacity)
+
+            idx = modulo(fnv1a_hash(value%key), capacity) + 1
+            do offset = 0, capacity - 1
+                mod_idx = modulo(idx - 1 + offset, capacity) + 1
                 if (.not. allocated(this%storage%items(mod_idx)%key)) then
                     this%storage%items(mod_idx)%key = value%key
                     this%storage%items(mod_idx)%value = value%value
                     this%storage%count = this%storage%count + 1
-                    exit
-                elseif (this%storage%items(mod_idx)%key == key) then
+                    return
+                elseif (this%storage%items(mod_idx)%key == value%key) then
                     this%storage%items(mod_idx)%value = value%value
-                    exit
+                    return
                 end if
             end do
-        end subroutine
+        end subroutine set
 
         ! Array related
         subroutine append(this, value)
