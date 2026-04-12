@@ -39,8 +39,7 @@ module fhash
             res = -3750763034362895579_int64
             do i = 1, len(key)
                 key_val = iachar(key(i:i), kind=int64)
-                res = ieor(res, key_val)
-                res = res * fnv_prime
+                res = ieor(res, key_val) * fnv_prime
             end do
         end function fnv1a_hash
 
