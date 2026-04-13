@@ -24,6 +24,7 @@ module fhash
             procedure rehash
             procedure set
             procedure get
+            procedure remove
     end type fhash_ht
 
     contains
@@ -131,6 +132,29 @@ module fhash
                 end if
             end do
         end subroutine set
+
+        subroutine remove(this, key)
+            class(fhash_ht) :: this
+            character(len=*) :: key
+            integer :: idx, mod_idx, offset, capacity
+
+            if (.not. allocated(this%storage%items)) return
+            capacity = size(this%storage%items)
+            if (capacity == 0) return
+
+            idx = modulo(fnv1a_hash(key), capacity) + 1
+
+            do offset = 0, capacity - 1
+                mod_idx = modulo(idx - 1 + offset, capacity) + 1
+                if (.not. allocated(this%storage%items(mod_idx)%key)) then
+                    return
+                elseif (this%storage%items(mod_idx)%key == key) then
+                    deallocate(this%storage%items(mod_idx)%key)
+                    deallocate(this%storage%items(mod_idx)%value)
+                    return
+                end if
+            end do
+        end subroutine remove
 
         ! Array related
         subroutine append(this, value)

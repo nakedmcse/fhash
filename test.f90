@@ -108,12 +108,16 @@ program test
             item%key = "256"
             item%value = 514
             call hashtable%set(item)
+            ! remove item
+            call hashtable%remove("254")
             ! Then
             call assert(hashtable%storage%count == 513, "Int hashtable count is wrong")
             call hashtable%get("1",item)
             call assert(unwrap_int(item%value) == 1, "Int hashtable element with key 1 is wrong")
             call hashtable%get("256",item)
             call assert(unwrap_int(item%value) == 514, "Int hashtable element with key 256 is wrong")
+            call hashtable%get("254",item)
+            call assert(item%error, "Int hashtable element with key 254 not removed")
             call hashtable%get("513",item)
             call assert(unwrap_int(item%value) == 513, "Int hashtable element with key 513 is wrong")
             print *,"Int hashtable test passed"
@@ -135,12 +139,16 @@ program test
             item%key = "256"
             item%value = "String 514"
             call hashtable%set(item)
+            ! remove item
+            call hashtable%remove("254")
             ! Then
             call assert(hashtable%storage%count == 513, "String hashtable count is wrong")
             call hashtable%get("1",item)
             call assert(unwrap_str(item%value) == "String 1", "String hashtable element with key 1 is wrong")
             call hashtable%get("256",item)
             call assert(unwrap_str(item%value) == "String 514", "String hashtable element with key 256 is wrong")
+            call hashtable%get("254",item)
+            call assert(item%error, "String hashtable element with key 254 not removed")
             call hashtable%get("513",item)
             call assert(unwrap_str(item%value) == "String 513", "String hashtable element with key 513 is wrong")
             print *,"String hashtable test passed"

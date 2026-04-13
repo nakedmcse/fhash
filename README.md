@@ -106,6 +106,10 @@ program hash_table_example
     call hashtable%get("two", item)
     print *,unwrap_str(item%value)
     
+    call hashtable%remove("three")
+    call hashtable%get("three", item)
+    print *, item%error  ! this will be true as three was removed
+    
     contains
 
         function unwrap_str(value) result (res)
