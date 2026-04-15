@@ -209,13 +209,49 @@ module fhash
         subroutine append_node(this, node)
             class(fhash_list) :: this
             class(fhash_list_node) :: node
-            ! TODO: Implement append node
+            class(fhash_list_node), pointer :: new_node
+
+            allocate(new_node)
+            new_node%key = node%key
+            if (allocated(node%value)) new_node%value = node%value
+            new_node%error = node%error
+            nullify(new_node%next)
+            nullify(new_node%previous)
+            this%count = this%count + 1
+
+            if(.not. associated(this%footer)) then
+                this%header => new_node
+                this%footer => new_node
+                return
+            end if
+
+            new_node%previous => this%footer
+            this%footer%next => new_node
+            this%footer => new_node
         end subroutine append_node
 
         subroutine prepend_node(this, node)
             class(fhash_list) :: this
             class(fhash_list_node) :: node
-            ! TODO: Implement prepend node
+            class(fhash_list_node), pointer :: new_node
+
+            allocate(new_node)
+            new_node%key = node%key
+            if (allocated(node%value)) new_node%value = node%value
+            new_node%error = node%error
+            nullify(new_node%next)
+            nullify(new_node%previous)
+            this%count = this%count + 1
+
+            if(.not. associated(this%header)) then
+                this%header => new_node
+                this%footer => new_node
+                return
+            end if
+
+            new_node%next => this%header
+            this%header%previous => new_node
+            this%header => new_node
         end subroutine prepend_node
 
         subroutine pop_node(this, node)
@@ -230,10 +266,10 @@ module fhash
             node%key = this%footer%key
             node%value = this%footer%value
             node%error = .false.
-            node%next = this%footer%next
-            node%previous = this%footer%previous
+            node%next => this%footer%next
+            node%previous => this%footer%previous
             deallocate(this%footer)
-            this%footer = node%previous
+            this%footer => node%previous
             this%count = this%count - 1
         end subroutine pop_node
 
@@ -249,10 +285,10 @@ module fhash
             node%key = this%header%key
             node%value = this%header%value
             node%error = .false.
-            node%next = this%header%next
-            node%previous = this%header%previous
+            node%next => this%header%next
+            node%previous => this%header%previous
             deallocate(this%header)
-            this%header = node%next
+            this%header => node%next
             this%count = this%count - 1
         end subroutine shift_node
 

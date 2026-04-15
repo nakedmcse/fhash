@@ -8,6 +8,7 @@ program test
     call test_array_strings()
     call test_hash_table_ints()
     call test_hash_table_strings()
+    call test_list_ints()
 
     contains
         subroutine assert(condition, message)
@@ -153,4 +154,26 @@ program test
             call assert(unwrap_str(item%value) == "String 513", "String hashtable element with key 513 is wrong")
             print *,"String hashtable test passed"
         end subroutine test_hash_table_strings
+
+        subroutine test_list_ints()
+            ! Given
+            type(fhash_list) :: list
+            type(fhash_list_node) :: item, popped, shifted
+            integer :: i
+            ! When
+            do i = 1,10
+                item%key = itoa(i)
+                item%value = i
+                call list%append_node(item)
+            end do
+            call list%pop_node(popped)
+            call list%shift_node(shifted)
+            ! Then
+            call assert(list%count == 8, "Int list count wrong")
+            call assert(unwrap_int(popped%value) == 10, "Int list popped value wrong")
+            call assert(unwrap_int(list%footer%value) == 9, "Int list tail peek value wrong")
+            call assert(unwrap_int(shifted%value) == 1, "Int list shifted value wrong")
+            call assert(unwrap_int(list%header%value) == 2, "Int list head peek value wrong")
+            print *,"Int list test passed"
+        end subroutine test_list_ints
 end program test
