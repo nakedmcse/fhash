@@ -293,10 +293,58 @@ module fhash
         end subroutine shift_node
 
         subroutine get_node(this, node, key)
-            class(fhash_list) :: this
-            class(fhash_list_node) :: node
-            class(*) :: key ! integer index or string key
-            ! TODO: Implement get node
+            class(fhash_list), intent(in) :: this
+            type(fhash_list_node), intent(out) :: node
+            class(*), intent(in) :: key
+
+            type(fhash_list_node), pointer :: current
+            integer :: idx
+
+            node%error = .true.
+            nullify(node%next)
+            nullify(node%previous)
+            if (allocated(node%key)) deallocate(node%key)
+            if (allocated(node%value)) deallocate(node%value)
+
+            current => this%header
+            if (.not. associated(current)) return
+
+            select type (key)
+            type is (integer)
+                idx = key
+                if (idx < 1) return
+
+                do while (associated(current))
+                    if (idx == 1) then
+                        node%key = current%key
+                        if (allocated(current%value)) allocate(node%value, source=current%value)
+                        node%error = .false.
+                        node%next => current%next
+                        node%previous => current%previous
+                        return
+                    end if
+
+                    current => current%next
+                    idx = idx - 1
+                end do
+
+            type is (character(*))
+                do while (associated(current))
+                    if (current%key == key) then
+                        node%key = current%key
+                        if (allocated(current%value)) allocate(node%value, source=current%value)
+                        node%error = .false.
+                        node%next => current%next
+                        node%previous => current%previous
+                        return
+                    end if
+
+                    current => current%next
+                end do
+
+            class default
+                return
+            end select
         end subroutine get_node
 
         subroutine set_node(this, node)

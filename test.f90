@@ -9,6 +9,7 @@ program test
     call test_hash_table_ints()
     call test_hash_table_strings()
     call test_list_ints()
+    call test_list_strings()
 
     contains
         subroutine assert(condition, message)
@@ -176,4 +177,34 @@ program test
             call assert(unwrap_int(list%header%value) == 2, "Int list head peek value wrong")
             print *,"Int list test passed"
         end subroutine test_list_ints
+
+        subroutine test_list_strings()
+            ! Given
+            type(fhash_list) :: list
+            type(fhash_list_node) :: item, popped, shifted, get_index, get_key, get_error
+            integer :: i
+            ! When
+            do i = 1,10
+                item%key = itoa(i)
+                item%value = "String " // itoa(i)
+                call list%append_node(item)
+            end do
+            call list%pop_node(popped)
+            call list%shift_node(shifted)
+            call list%get_node(get_index,2)
+            call list%get_node(get_key,"6")
+            call list%get_node(get_error,"999")
+            ! Then
+            call assert(list%count == 8, "String list count wrong")
+            call assert(unwrap_str(popped%value) == "String 10", "String list popped value wrong")
+            call assert(unwrap_str(list%footer%value) == "String 9", "String list tail peek value wrong")
+            call assert(unwrap_str(shifted%value) == "String 1", "String list shifted value wrong")
+            call assert(unwrap_str(list%header%value) == "String 2", "String list head peek value wrong")
+            call assert(unwrap_str(get_index%value) == "String 3", "String list get index value wrong")
+            call assert(.not. get_index%error, "String list get index error set")
+            call assert(unwrap_str(get_key%value) == "String 6", "String list get key value wrong")
+            call assert(.not. get_key%error, "String list get key error set")
+            call assert(get_error%error, "String list get error error not set")
+            print *,"String list test passed"
+        end subroutine test_list_strings
 end program test
