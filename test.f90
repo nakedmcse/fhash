@@ -181,7 +181,8 @@ program test
         subroutine test_list_strings()
             ! Given
             type(fhash_list) :: list
-            type(fhash_list_node) :: item, popped, shifted, get_index, get_key, get_error
+            type(fhash_list_node) :: item, popped, shifted
+            type(fhash_list_node), pointer :: get_index, get_key, get_error
             integer :: i
             ! When
             do i = 1,10
@@ -204,7 +205,7 @@ program test
             call assert(.not. get_index%error, "String list get index error set")
             call assert(unwrap_str(get_key%value) == "String 6", "String list get key value wrong")
             call assert(.not. get_key%error, "String list get key error set")
-            call assert(get_error%error, "String list get error error not set")
+            call assert(.not. associated(get_error), "String list get error was associated")
             print *,"String list test passed"
         end subroutine test_list_strings
 end program test

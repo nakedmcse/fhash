@@ -42,7 +42,6 @@ module fhash
             procedure pop_node
             procedure shift_node
             procedure get_node
-            procedure set_node
             procedure remove_node
     end type fhash_list
 
@@ -294,18 +293,13 @@ module fhash
 
         subroutine get_node(this, node, key)
             class(fhash_list), intent(in) :: this
-            type(fhash_list_node), intent(out) :: node
+            type(fhash_list_node), pointer, intent(out) :: node
             class(*), intent(in) :: key
 
             type(fhash_list_node), pointer :: current
             integer :: idx
 
-            node%error = .true.
-            nullify(node%next)
-            nullify(node%previous)
-            if (allocated(node%key)) deallocate(node%key)
-            if (allocated(node%value)) deallocate(node%value)
-
+            nullify(node)
             current => this%header
             if (.not. associated(current)) return
 
@@ -316,11 +310,7 @@ module fhash
 
                 do while (associated(current))
                     if (idx == 1) then
-                        node%key = current%key
-                        if (allocated(current%value)) allocate(node%value, source=current%value)
-                        node%error = .false.
-                        node%next => current%next
-                        node%previous => current%previous
+                        node => current
                         return
                     end if
 
@@ -331,11 +321,7 @@ module fhash
             type is (character(*))
                 do while (associated(current))
                     if (current%key == key) then
-                        node%key = current%key
-                        if (allocated(current%value)) allocate(node%value, source=current%value)
-                        node%error = .false.
-                        node%next => current%next
-                        node%previous => current%previous
+                        node => current
                         return
                     end if
 
@@ -346,12 +332,6 @@ module fhash
                 return
             end select
         end subroutine get_node
-
-        subroutine set_node(this, node)
-            class(fhash_list) :: this
-            class(fhash_list_node) :: node
-            ! TODO: Implement set node
-        end subroutine set_node
 
         subroutine remove_node(this, key)
             class(fhash_list) :: this
