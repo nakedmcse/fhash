@@ -254,40 +254,58 @@ module fhash
         end subroutine prepend_node
 
         subroutine pop_node(this, node)
-            class(fhash_list) :: this
-            class(fhash_list_node) :: node
+            class(fhash_list), intent(inout) :: this
+            type(fhash_list_node), intent(out) :: node
+            type(fhash_list_node), pointer :: old
 
-            if(.not. associated(this%footer)) then
+            if (.not. associated(this%footer)) then
                 node%error = .true.
                 return
             end if
 
-            node%key = this%footer%key
-            node%value = this%footer%value
+            old => this%footer
+            node%key = old%key
+            if (allocated(old%value)) node%value = old%value
             node%error = .false.
-            node%next => this%footer%next
-            node%previous => this%footer%previous
-            deallocate(this%footer)
-            this%footer => node%previous
+            node%next => null()
+            node%previous => old%previous
+            this%footer => old%previous
+
+            if (associated(this%footer)) then
+                nullify(this%footer%next)
+            else
+                nullify(this%header)
+            end if
+
+            deallocate(old)
             this%count = this%count - 1
         end subroutine pop_node
 
         subroutine shift_node(this, node)
-            class(fhash_list) :: this
-            class(fhash_list_node) :: node
+            class(fhash_list), intent(inout) :: this
+            type(fhash_list_node), intent(out) :: node
+            type(fhash_list_node), pointer :: old
 
-            if(.not. associated(this%header)) then
+            if (.not. associated(this%header)) then
                 node%error = .true.
                 return
             end if
 
-            node%key = this%header%key
-            node%value = this%header%value
+            old => this%header
+            node%key = old%key
+            if (allocated(old%value)) node%value = old%value
             node%error = .false.
-            node%next => this%header%next
-            node%previous => this%header%previous
-            deallocate(this%header)
-            this%header => node%next
+            node%previous => null()
+            node%next => old%next
+            this%header => old%next
+
+            if (associated(this%header)) then
+                nullify(this%header%previous)
+            else
+                nullify(this%footer)
+            end if
+
+            deallocate(old)
             this%count = this%count - 1
         end subroutine shift_node
 
