@@ -194,9 +194,10 @@ program test
             call list%shift_node(shifted)
             call list%get_node(get_index,2)
             call list%get_node(get_key,"6")
-            call list%get_node(get_error,"999")
+            call list%remove_node("5")
+            call list%get_node(get_error,"5")
             ! Then
-            call assert(list%count == 8, "String list count wrong")
+            call assert(list%count == 7, "String list count wrong")
             call assert(unwrap_str(popped%value) == "String 10", "String list popped value wrong")
             call assert(unwrap_str(list%footer%value) == "String 9", "String list tail peek value wrong")
             call assert(unwrap_str(shifted%value) == "String 1", "String list shifted value wrong")

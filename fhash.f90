@@ -354,6 +354,22 @@ module fhash
         subroutine remove_node(this, key)
             class(fhash_list) :: this
             class(*) :: key ! integer index or string key
-            ! TODO: Implement remove node
+            type(fhash_list_node), pointer :: node => null()
+
+            call this%get_node(node, key)
+            if (.not. associated(node)) return
+
+            if (.not. associated(node%previous)) then
+                if (associated(node%next)) this%header => node%next
+            elseif (.not. associated(node%next)) then
+                if (associated(node%previous)) this%footer => node%previous
+            else
+                node%previous%next => node%next
+                node%next%previous => node%previous
+            end if
+
+            this%count = this%count - 1
+            deallocate(node)
+            nullify(node)
         end subroutine remove_node
 end module fhash
