@@ -3,7 +3,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/nakedmcse/fhash.png)](https://github.com/nakedmcse/fhash/issues)
 [![last-commit](https://img.shields.io/github/last-commit/nakedmcse/fhash)](https://github.com/nakedmcse/fhash/commits/master)
 
-A lightweight, simple to use, pure FORTRAN implementation of a generic hash table and dynamic array.
+A lightweight, simple to use, pure FORTRAN implementation of a generic hash table, dynamic array and list.
 
 ## Building
 
@@ -151,6 +151,70 @@ program array_example
     
     print *,unwrap_str(array%items(1)%value)
     print *,array%count
+
+    contains
+
+        function unwrap_str(value) result (res)
+            character(len=:), allocatable :: res
+            class(*) :: value
+            select type(v => value)
+            type is (character(*))
+                res = v
+            class default
+                res = "unknown"
+            end select
+        end function unwrap_str
+end program array_example
+```
+
+## List Usage
+
+Conceptually this is simply creating a variable of the type `fhash_list` and then using append to add items, pop to remove the last item added or shift to remove the first item.
+Get node can be used to get a pointer to a specified key or index (zero based).
+
+```fortran
+program list_example
+    use fhash
+    implicit none
+    type(fhash_list) :: list
+    type(fhash_list_node) :: item, popped, shifted
+    type(fhash_list_node), pointer :: get_index, get_key, get_error
+    
+    item%value = "one"
+    item%key = "one"
+    call list%append_node(item)
+    
+    item%value = "two"
+    item%key = "two"
+    call list%append_node(item)
+    
+    item%value = "three"
+    item%key = "three"
+    call list%append_node(item)
+
+    item%value = "four"
+    item%key = "four"
+    call list%append_node(item)
+
+    item%value = "five"
+    item%key = "five"
+    call list%append_node(item)
+    
+    call list%pop_node(popped)
+    print *,unwrap_str(popped%value)
+
+    call list%shift_node(shifted)
+    print *,unwrap_str(shifted%value)
+
+    call list%get_node(get_index,1)
+    print *,unwrap_str(get_index%value)
+    
+    call list%get_node(get_key,"three")
+    print *,unwrap_str(get_key%value)
+    
+    call list%remove_node("four")
+    call list%get_node(get_error,"four")
+    print(associated(get_error))
 
     contains
 

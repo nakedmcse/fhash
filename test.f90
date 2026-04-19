@@ -160,6 +160,7 @@ program test
             ! Given
             type(fhash_list) :: list
             type(fhash_list_node) :: item, popped, shifted
+            type(fhash_list_node), pointer :: get_index, get_key, get_error
             integer :: i
             ! When
             do i = 1,10
@@ -169,12 +170,21 @@ program test
             end do
             call list%pop_node(popped)
             call list%shift_node(shifted)
+            call list%get_node(get_index,2)
+            call list%get_node(get_key,"6")
+            call list%remove_node("7")
+            call list%get_node(get_error,"7")
             ! Then
-            call assert(list%count == 8, "Int list count wrong")
+            call assert(list%count == 7, "Int list count wrong")
             call assert(unwrap_int(popped%value) == 10, "Int list popped value wrong")
             call assert(unwrap_int(list%footer%value) == 9, "Int list tail peek value wrong")
             call assert(unwrap_int(shifted%value) == 1, "Int list shifted value wrong")
             call assert(unwrap_int(list%header%value) == 2, "Int list head peek value wrong")
+            call assert(unwrap_int(get_index%value) == 3, "Int list get index value wrong")
+            call assert(.not. get_index%error, "Int list get index error set")
+            call assert(unwrap_int(get_key%value) == 6, "Int list get key value wrong")
+            call assert(.not. get_key%error, "Int list get key error set")
+            call assert(.not. associated(get_error), "Int list get error was associated")
             print *,"Int list test passed"
         end subroutine test_list_ints
 
